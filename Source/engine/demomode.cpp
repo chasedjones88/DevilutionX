@@ -136,6 +136,7 @@ struct {
 	uint8_t numFullManaPotionPickup = 0;
 	uint8_t numRejuPotionPickup = 0;
 	uint8_t numFullRejuPotionPickup = 0;
+	uint8_t numAutoPickupRadius = 1;
 } DemoSettings;
 
 FILE *DemoRecording;
@@ -175,6 +176,7 @@ void ReadSettings(FILE *in, uint8_t version) // NOLINT(readability-identifier-le
 		DemoSettings.numFullManaPotionPickup = ReadByte(in);
 		DemoSettings.numRejuPotionPickup = ReadByte(in);
 		DemoSettings.numFullRejuPotionPickup = ReadByte(in);
+		DemoSettings.numAutoPickupRadius = ReadByte(in);
 	} else {
 		DemoSettings = {};
 	}
@@ -206,7 +208,8 @@ void ReadSettings(FILE *in, uint8_t version) // NOLINT(readability-identifier-le
 	         { _("Mana Potion Pickup"), DemoSettings.numManaPotionPickup },
 	         { _("Full Mana Potion Pickup"), DemoSettings.numFullManaPotionPickup },
 	         { _("Rejuvenation Potion Pickup"), DemoSettings.numRejuPotionPickup },
-	         { _("Full Rejuvenation Potion Pickup"), DemoSettings.numFullRejuPotionPickup } }) {
+	         { _("Full Rejuvenation Potion Pickup"), DemoSettings.numFullRejuPotionPickup }, 
+	         { _("Auto Pickup Radius"), DemoSettings.numAutoPickupRadius }, }) {
 		fmt::format_to(std::back_inserter(message), "\n{}={}", key, value);
 	}
 	Log("{}", message);
@@ -240,6 +243,7 @@ void WriteSettings(FILE *out)
 	WriteByte(out, *options.Gameplay.numFullManaPotionPickup);
 	WriteByte(out, *options.Gameplay.numRejuPotionPickup);
 	WriteByte(out, *options.Gameplay.numFullRejuPotionPickup);
+	WriteByte(out, *options.Gameplay.numAutoPickupRadius);
 }
 
 #if SDL_VERSION_ATLEAST(2, 0, 0)
