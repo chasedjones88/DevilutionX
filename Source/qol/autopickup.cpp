@@ -11,6 +11,7 @@
 #include "options.h"
 #include "player.h"
 #include "utils/algorithm/container.hpp"
+#include "levels/tile_properties.hpp"
 
 namespace devilution {
 namespace {
@@ -90,6 +91,100 @@ bool DoPickup(Item item)
 
 } // namespace
 
+void TryPickupAtLocation(const Player& player, Point loc)
+{
+	if (&player != MyPlayer)
+		return;
+
+	if (dItem[loc.x][loc.y] != 0) {
+		int itemIndex = dItem[loc.x][loc.y] - 1;
+		auto &item = Items[itemIndex];
+		if (DoPickup(item)) {
+			NetSendCmdGItem(true, CMD_REQUESTAGITEM, player, itemIndex);
+			item._iRequest = true;
+		}
+	}
+}
+
+bool IsLineClear(tl::function_ref<bool(Point)> clear, Point startPoint, Point endPoint)
+{
+	Point position = startPoint;
+
+	int dx = endPoint.x - position.x;
+	int dy = endPoint.y - position.y;
+	if (std::abs(dx) > std::abs(dy)) {
+		if (dx < 0) {
+			std::swap(position, endPoint);
+			dx = -dx;
+			dy = -dy;
+		}
+		int d;
+		int yincD;
+		int dincD;
+		int dincH;
+		if (dy > 0) {
+			d = 2 * dy - dx;
+			dincD = 2 * dy;
+			dincH = 2 * (dy - dx);
+			yincD = 1;
+		} else {
+			d = 2 * dy + dx;
+			dincD = 2 * dy;
+			dincH = 2 * (dx + dy);
+			yincD = -1;
+		}
+		bool done = false;
+		while (!done && position != endPoint) {
+			if ((d <= 0) ^ (yincD < 0)) {
+				d += dincD;
+			} else {
+				d += dincH;
+				position.y += yincD;
+			}
+			position.x++;
+			done = position != startPoint && !clear(position);
+		}
+	} else {
+		if (dy < 0) {
+			std::swap(position, endPoint);
+			dy = -dy;
+			dx = -dx;
+		}
+		int d;
+		int xincD;
+		int dincD;
+		int dincH;
+		if (dx > 0) {
+			d = 2 * dx - dy;
+			dincD = 2 * dx;
+			dincH = 2 * (dx - dy);
+			xincD = 1;
+		} else {
+			d = 2 * dx + dy;
+			dincD = 2 * dx;
+			dincH = 2 * (dy + dx);
+			xincD = -1;
+		}
+		bool done = false;
+		while (!done && position != endPoint) {
+			if ((d <= 0) ^ (xincD < 0)) {
+				d += dincD;
+			} else {
+				d += dincH;
+				position.x += xincD;
+			}
+			position.y++;
+			done = position != startPoint && !clear(position);
+		}
+	}
+	return position == endPoint;
+}
+
+bool IsLineBlocked(Point startPoint, Point endPoint)
+{
+	return !IsLineClear(IsTileNotSolid, startPoint, endPoint);
+}
+
 void AutoPickup(const Player &player)
 {
 	if (&player != MyPlayer)
@@ -97,14 +192,27 @@ void AutoPickup(const Player &player)
 	if (leveltype == DTYPE_TOWN && !*GetOptions().Gameplay.autoPickupInTown)
 		return;
 
-	for (auto pathDir : PathDirs) {
-		Point tile = player.position.tile + pathDir;
-		if (dItem[tile.x][tile.y] != 0) {
-			int itemIndex = dItem[tile.x][tile.y] - 1;
-			auto &item = Items[itemIndex];
-			if (DoPickup(item)) {
-				NetSendCmdGItem(true, CMD_REQUESTAGITEM, player, itemIndex);
-				item._iRequest = true;
+	const int MIN_RADIUS = 0;
+	const int MAX_RADIUS = 3;
+
+	int radius = *GetOptions().Gameplay.numAutoPickupRadius;
+	radius = std::clamp(radius, MIN_RADIUS, MAX_RADIUS); // subtract 1 since the path already includes a radius of 1.
+
+	if (radius == 0) {
+		TryPickupAtLocation(player, player.position.tile);
+	} else {
+		Point referenceTile = player.position.tile;
+		for (int xRad = -radius; xRad <= radius; xRad++) {
+			for (int yRad = -radius; yRad <= radius; yRad++) {
+				Point itemSpace = { referenceTile.x + xRad, referenceTile.y + yRad };
+				if (!InDungeonBounds(itemSpace)) {
+					continue;
+				}
+				if (IsLineBlocked(player.position.tile, itemSpace)) {
+					continue;
+				}
+
+				TryPickupAtLocation(player, itemSpace);
 			}
 		}
 	}
