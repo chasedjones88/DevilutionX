@@ -1837,6 +1837,14 @@ void InitKeymapActions()
 	    CycleAutomapType,
 	    nullptr,
 	    IsGameRunning);
+	options.Keymapper.AddAction(
+	    "ToggleWalkRunMode",
+	    N_("Toggle walk/run"),
+	    N_("Walk/Run on command."),
+	    SDLK_r,
+	    ToggleWalkRunMode,
+	    nullptr,
+	    IsGameRunning);
 
 	options.Keymapper.AddAction(
 	    "Inventory",

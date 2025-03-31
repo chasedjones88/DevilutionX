@@ -136,7 +136,8 @@ void HandleWalkMode(Player &player, Direction dir)
 void StartWalkAnimation(Player &player, Direction dir, bool pmWillBeCalled)
 {
 	int8_t skippedFrames = -2;
-	if (leveltype == DTYPE_TOWN && sgGameInitInfo.bRunInTown != 0)
+	if ((leveltype == DTYPE_TOWN && sgGameInitInfo.bRunInTown != 0) ||
+		player.bIsRunToggled)
 		skippedFrames = 2;
 	if (pmWillBeCalled)
 		skippedFrames += 1;
@@ -395,7 +396,7 @@ void InitLevelChange(Player &player)
 bool DoWalk(Player &player)
 {
 	// Play walking sound effect on certain animation frames
-	if (*GetOptions().Audio.walkingSound && (leveltype != DTYPE_TOWN || sgGameInitInfo.bRunInTown == 0)) {
+	if (*GetOptions().Audio.walkingSound && ((leveltype != DTYPE_TOWN || sgGameInitInfo.bRunInTown == 0) || player.bIsRunToggled)) {
 		if (player.AnimInfo.currentFrame == 0
 		    || player.AnimInfo.currentFrame == 4) {
 			PlaySfxLoc(SfxID::Walk, player.position.tile);

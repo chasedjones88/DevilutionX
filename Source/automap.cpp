@@ -1468,6 +1468,11 @@ void DrawAutomapText(const Surface &out)
 	std::string difficultyString = fmt::format(fmt::runtime(_(/* TRANSLATORS: {:s} means: Game Difficulty. */ "Difficulty: {:s}")), difficulty);
 	DrawString(out, difficultyString, linePosition);
 
+	if (MyPlayer->bIsRunToggled) {
+		linePosition.y += 45;
+		DrawString(out, "Run On", linePosition);
+	}
+
 #ifdef _DEBUG
 	const TextRenderOptions debugTextOptions {
 		.flags = UiFlags::ColorOrange,

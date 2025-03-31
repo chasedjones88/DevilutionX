@@ -1067,6 +1067,11 @@ void CycleAutomapType()
 	}
 }
 
+void ToggleWalkRunMode() {
+	Player &myPlayer = *MyPlayer;
+	myPlayer.bIsRunToggled = !myPlayer.bIsRunToggled;
+}
+
 void CheckPanelInfo()
 {
 	MainPanelFlag = false;
